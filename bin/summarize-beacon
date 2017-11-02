@@ -1,1 +1,23 @@
-# Placeholder for your script.
+#!/usr/bin/env python3
+import datetime
+import urllib.request as ur
+import xml.etree.ElementTree as ET
+import time
+
+times = int(datetime.datetime.now().strftime("%s"))
+print ('Current time in epoch: ' + str(times))
+
+time.sleep(120)
+url = "https://beacon.nist.gov/rest/record/%s" % times
+print ('Url for get value: ' + str(url))
+
+root = ur.urlopen(url)
+read_xml = root.read()
+tree = ET.fromstring(read_xml)
+outputValue = tree.find('{http://beacon.nist.gov/record/0.1/}outputValue').text
+print ('outputValue: ' + str(outputValue))
+
+mylist = list(outputValue)
+
+for count, elem in sorted(((mylist.count(e), e) for e in set(mylist)), reverse=True):
+    print ('%s %d' % (elem, count))
