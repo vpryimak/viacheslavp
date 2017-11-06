@@ -1,8 +1,70 @@
-#!/usr/bin/env python3
-import datetime
+
+
 import urllib.request as ur
 import xml.etree.ElementTree as ET
 import time
+import argparse
+import datetime
+from dateutil.relativedelta import relativedelta
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--from', action="store", dest="date_from",type=str, required=False, default=None, )
+parser.add_argument('--to', action="store", dest="date_to", type=str, required=False, default=None)
+
+args = parser.parse_args()
+date_from = str(args.date_from)
+date_to = str(args.date_to)
+launch_datetime = datetime.datetime.now()
+
+def parse_date(args_string, launch_datetime):
+	vals=[]
+	period=[]
+	for val in args_string.split(" "):
+		try:
+			int(val)
+			vals.append(val)
+		except:
+	 		period.append(val)
+
+	parsed_datetime=launch_datetime
+
+	while len(period) > 0:
+		var = period.pop().lower()
+		if "ago" in var:
+			continue
+		elif "month" in var:
+			parsed_datetime -= relativedelta(months=int(vals.pop()))
+		elif "day" in var:
+			parsed_datetime -= relativedelta(days=int(vals.pop()))
+		elif "hour" in var:
+			parsed_datetime -= relativedelta(hours=int(vals.pop()))
+		elif "minute" in var:
+			parsed_datetime -= relativedelta(minutes=int(vals.pop()))
+	return parsed_datetime
+
+parsed_from = parse_date(date_from, launch_datetime)
+parsed_to = parse_date(date_to, launch_datetime)
+
+epoch_from_time = int(parsed_from.strftime("%s"))
+epoch_to_time = int(parsed_to.strftime("%s"))
+
+mylist = ""
+while epoch_from_time <= epoch_to_time:
+	#time.sleep(120)
+	url = "https://beacon.nist.gov/rest/record/%s" % epoch_from_time
+	root = ur.urlopen(url)
+	read_xml = root.read()
+	tree = ET.fromstring(read_xml)
+	outputValue = tree.find('{http://beacon.nist.gov/record/0.1/}outputValue').text
+	print ('outputValue: ' + str(outputValue))
+	mylist+=outputValue
+	epoch_from_time += 60
+
+mylist = list(mylist)
+print (mylist)
+for count, elem in sorted(((mylist.count(e), e) for e in set(mylist)), reverse=True):
+    print ('%s %d' % (elem, count))
 
 times = int(datetime.datetime.now().strftime("%s"))
 print ('Current time in epoch: ' + str(times))
